@@ -76,7 +76,7 @@ def enroll_keys(args):
     # Wait until the shell starts (First line printed)
     read = p.stdout.readline()
     if args.print_output:
-        print('OUT: %s' % read)
+        print(strip_special(read))
     # Send escape to enter shell early
     p.stdin.write(chr(27))
     p.stdin.write(b'fs0:\r\n')
