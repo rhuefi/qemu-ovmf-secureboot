@@ -10,6 +10,8 @@
 #          Then, boot a Kernel and initrd with QEMU, and verify if
 #          Secure Boot is enabled.
 
+from __future__ import print_function
+
 import argparse
 import os
 import shutil
@@ -76,7 +78,7 @@ def enroll_keys(args):
     # Wait until the shell starts (First line printed)
     read = p.stdout.readline()
     if args.print_output:
-        print(strip_special(read))
+        print(strip_special(read), end='')
     # Send escape to enter shell early
     p.stdin.write(chr(27))
     p.stdin.write(b'fs0:\r\n')
@@ -85,12 +87,12 @@ def enroll_keys(args):
     while True:
         read = p.stdout.readline()
         if args.print_output:
-            print('OUT: %s' % strip_special(read))
+            print('OUT: %s' % strip_special(read), end='')
         if 'info: success' in read:
             break
     p.kill()
     if args.print_output:
-        print(strip_special(p.stdout.read()))
+        print(strip_special(p.stdout.read()), end='')
 
 
 def test_keys(args):
@@ -113,7 +115,7 @@ def test_keys(args):
     while True:
         read = p.stdout.readline()
         if args.print_output:
-            print('OUT: %s' % strip_special(read))
+            print('OUT: %s' % strip_special(read), end='')
         if 'Secure boot disabled' in read:
             raise Exception('Secure boot was disabled')
         elif 'Secure boot enabled and kernel locked down' in read:
@@ -122,7 +124,7 @@ def test_keys(args):
             break
     p.kill()
     if args.print_output:
-        print(strip_special(p.stdout.read()))
+        print(strip_special(p.stdout.read()), end='')
 
 
 
