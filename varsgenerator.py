@@ -1,3 +1,4 @@
+#!/bin/python
 # Copyright (C) 2017 Red Hat
 # Authors: 
 # - Patrick Uiterwijk <puiterwijk@redhat.com>
