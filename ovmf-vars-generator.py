@@ -23,7 +23,7 @@ def strip_special(line):
 
 def generate_qemu_cmd(args, readonly, *extra_args):
     return [
-        '/usr/bin/qemu-system-x86_64',
+        args.qemu_binary,
         '-machine', 'q35,smm=on,accel=kvm',
         '-display', 'none',
         '-no-user-config',
@@ -135,6 +135,8 @@ def parse_args():
                         action='store_true')
     parser.add_argument('--verbose', '-v', help='Print status',
                         action='store_true')
+    parser.add_argument('--qemu-binary', help='QEMU binary path',
+                        default='/usr/bin/qemu-system-x86_64')
     parser.add_argument('--ovmf-binary', help='OVMF secureboot code file',
                         default='/usr/share/edk2/ovmf/OVMF_CODE.secboot.fd')
     parser.add_argument('--ovmf-template-vars', help='OVMF empty vars file',
