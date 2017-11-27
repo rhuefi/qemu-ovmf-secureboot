@@ -3,6 +3,23 @@
 Script to generate an OVMF variables ("VARS") file with default Secure
 Boot keys enrolled.  (And verify that it works.)
 
+Simplest working invocation of the script is:
+
+    $ ./ovmf-vars-generator.py output_VARS-final.fd
+
+But, a more tedious variant where you can invoke the script with custom
+paths and URLs:
+
+    $ ./ovmf-vars-generator.py \
+        --ovmf-binary /usr/share/edk2/ovmf/OVMF_CODE.secboot.fd \
+        --uefi-shell-iso /usr/share/edk2/ovmf/UefiShell.iso \
+        --ovmf-template-vars /usr/share/edk2/ovmf/OVMF_VARS.fd \
+        --fedora-version 27 \
+        --kernel-url https://dl.fedoraproject.org/pub/fedora/linux/releases/27/Everything/x86_64/os/images/pxeboot/vmlinuz \
+        --initrd-url https://dl.fedoraproject.org/pub/fedora/linux/releases/27/Everything/x86_64/os/images/pxeboot/initrd.img 2-output_VARS-final.fd \
+        another-output_VARS-final.fd
+
+
 This script does the following, in that order:
 
 (1) Launches a QEMU guest with the UefiShell.iso as a CD-ROM.
