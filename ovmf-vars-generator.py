@@ -127,7 +127,6 @@ def test_keys(args):
         print(strip_special(p.stdout.read()), end='')
 
 
-
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('output', help='Filename for output vars file')
