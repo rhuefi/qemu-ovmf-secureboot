@@ -15,6 +15,7 @@ from __future__ import print_function
 
 import argparse
 import os
+import tempfile
 import shutil
 import string
 import subprocess
@@ -47,9 +48,18 @@ def generate_qemu_cmd(args, readonly, *extra_args):
         '-serial', 'stdio'] + list(extra_args)
 
 
-def download(url, target, verbose):
-    if os.path.exists(target):
-        return
+def download(url, target, verbose, suffix, no_download):
+    istemp = False
+    if target and os.path.exists(target):
+        return target, istemp
+    if not target:
+        temped = tempfile.mkstemp(prefix='qosb.', suffix='.%s' % suffix)
+        os.close(temped[0])
+        target = temped[1]
+        istemp = True
+    if no_download:
+        raise Exception('%s did not exist, but downloading was disabled' %
+                        target)
     import requests
     if verbose:
         print('Downloading %s to %s' % (url, target))
@@ -58,6 +68,7 @@ def download(url, target, verbose):
         for chunk in r.iter_content(chunk_size=1024):
             if chunk:
                 f.write(chunk)
+    return target, istemp
 
 
 def enroll_keys(args):
@@ -100,35 +111,40 @@ def enroll_keys(args):
 
 
 def test_keys(args):
-    kernel = '/tmp/qemu-kernel'
-    initrd = '/tmp/qemu-initrd'
+    kernel, kerneltemp = download(args.kernel_url, args.kernel_path,
+                                  args.verbose, 'kernel', args.no_download)
+    initrd, initrdtemp = download(args.initrd_url, args.initrd_path,
+                                  args.verbose, 'initrd', args.no_download)
 
-    download(args.kernel_url, kernel, args.verbose)
-    download(args.initrd_url, initrd, args.verbose)
-
-    cmd = generate_qemu_cmd(
-        args,
-        True,
-        '-append', 'console=tty0 console=ttyS0,115200n8',
-        '-kernel', kernel,
-        '-initrd', initrd)
-    p = subprocess.Popen(cmd,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
-    while True:
-        read = p.stdout.readline()
+    try:
+        cmd = generate_qemu_cmd(
+            args,
+            True,
+            '-append', 'console=tty0 console=ttyS0,115200n8',
+            '-kernel', kernel,
+            '-initrd', initrd)
+        p = subprocess.Popen(cmd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+        while True:
+            read = p.stdout.readline()
+            if args.print_output:
+                print('OUT: %s' % strip_special(read), end='')
+            if 'Secure boot disabled' in read:
+                raise Exception('Secure boot was disabled')
+            elif 'Secure boot enabled and kernel locked down' in read:
+                if args.verbose:
+                    print('Confirmed: Secure Boot enabled!')
+                break
+        p.kill()
         if args.print_output:
-            print('OUT: %s' % strip_special(read), end='')
-        if 'Secure boot disabled' in read:
-            raise Exception('Secure boot was disabled')
-        elif 'Secure boot enabled and kernel locked down' in read:
-            if args.verbose:
-                print('Confirmed: Secure Boot enabled!')
-            break
-    p.kill()
-    if args.print_output:
-        print(strip_special(p.stdout.read()), end='')
+            print(strip_special(p.stdout.read()), end='')
+    finally:
+        if kerneltemp:
+            os.remove(kernel)
+        if initrdtemp:
+            os.remove(initrd)
 
 
 def parse_args():
@@ -148,6 +164,12 @@ def parse_args():
                         default='/usr/share/edk2/ovmf/OVMF_VARS.fd')
     parser.add_argument('--uefi-shell-iso', help='Path to uefi shell iso',
                         default='/usr/share/edk2/ovmf/UefiShell.iso')
+    parser.add_argument('--kernel-path',
+                        help='Specify a consistent path for kernel')
+    parser.add_argument('--initrd-path',
+                        help='Specify a consistent path for initrd')
+    parser.add_argument('--no-download', action='store_true',
+                        help='Never download a kernel/initrd')
     parser.add_argument('--fedora-version',
                         help='Fedora version to get kernel/initrd for checking',
                         default='27')
