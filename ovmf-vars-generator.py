@@ -86,9 +86,11 @@ def enroll_keys(args):
     p = subprocess.Popen(cmd,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
+        stderr=subprocess.STDOUT)
     # Wait until the UEFI shell starts (first line is printed)
     read = p.stdout.readline()
+    if 'char device redirected' in read:
+        read = p.stdout.readline()
     if args.print_output:
         print(strip_special(read), end='')
     # Send the escape char to enter the UEFI shell early
@@ -126,7 +128,7 @@ def test_keys(args):
         p = subprocess.Popen(cmd,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
+            stderr=subprocess.STDOUT)
         while True:
             read = p.stdout.readline()
             if args.print_output:
