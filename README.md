@@ -15,7 +15,9 @@ paths and URLs:
         --uefi-shell-iso /usr/share/edk2/ovmf/UefiShell.iso \
         --ovmf-template-vars /usr/share/edk2/ovmf/OVMF_VARS.fd \
         --fedora-version 27 \
+        --kernel-path /tmp/qosb.kernel \
         --kernel-url https://download.fedoraproject.org/pub/fedora/linux/releases/27/Everything/x86_64/os/images/pxeboot/vmlinuz \
+        --initrd-path /tmp/qosb.initrd \
         --initrd-url https://download.fedoraproject.org/pub/fedora/linux/releases/27/Everything/x86_64/os/images/pxeboot/initrd.img \
         another-output-VARS.fd
 
