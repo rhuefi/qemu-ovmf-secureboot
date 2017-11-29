@@ -1,14 +1,15 @@
 #!/bin/python
 # Copyright (C) 2017 Red Hat
-# Authors: 
+# Authors:
 # - Patrick Uiterwijk <puiterwijk@redhat.com>
 # - Kashyap Chamarthy <kchamart@redhat.com>
 #
 # Licensed under MIT License, for full text see LICENSE
 #
-# Purpose: Launch a QEMU guest and enroll UEFI keys into an OVMF VARS file.
-#          Then, boot a Kernel and initrd with QEMU, and verify if
-#          Secure Boot is enabled.
+# Purpose: Launch a QEMU guest and enroll ithe UEFI keys into an OVMF
+#          variables ("VARS") file.  Then boot a Linux kernel and initrd
+#          with QEMU.  Finally, perform a check to verify if Secure Boot
+#          is enabled.
 
 from __future__ import print_function
 
@@ -54,7 +55,7 @@ def download(url, target, verbose):
         print('Downloading %s to %s' % (url, target))
     r = requests.get(url, stream=True)
     with open(target, 'wb') as f:
-        for chunk in r.iter_content(chunk_size=1024): 
+        for chunk in r.iter_content(chunk_size=1024):
             if chunk:
                 f.write(chunk)
 
@@ -75,12 +76,15 @@ def enroll_keys(args):
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE)
-    # Wait until the shell starts (First line printed)
+    # Wait until the UEFI shell starts (first line is printed)
     read = p.stdout.readline()
     if args.print_output:
         print(strip_special(read), end='')
-    # Send escape to enter shell early
+    # Send the escape char to enter the UEFI shell early
     p.stdin.write(chr(27))
+    # And then run the following three commands from the UEFI shell:
+    # change into the first file system device; install the default
+    # keys and certificates, and reboot
     p.stdin.write(b'fs0:\r\n')
     p.stdin.write(b'EnrollDefaultKeys.efi\r\n')
     p.stdin.write(b'reset\r\n')

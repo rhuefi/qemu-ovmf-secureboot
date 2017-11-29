@@ -5,7 +5,7 @@ Boot keys enrolled.  (And verify that it works.)
 
 Simplest working invocation of the script is:
 
-    $ ./ovmf-vars-generator.py output_VARS-final.fd
+    $ ./ovmf-vars-generator.py output-VARS.fd
 
 But, a more tedious variant where you can invoke the script with custom
 paths and URLs:
@@ -15,9 +15,9 @@ paths and URLs:
         --uefi-shell-iso /usr/share/edk2/ovmf/UefiShell.iso \
         --ovmf-template-vars /usr/share/edk2/ovmf/OVMF_VARS.fd \
         --fedora-version 27 \
-        --kernel-url https://dl.fedoraproject.org/pub/fedora/linux/releases/27/Everything/x86_64/os/images/pxeboot/vmlinuz \
-        --initrd-url https://dl.fedoraproject.org/pub/fedora/linux/releases/27/Everything/x86_64/os/images/pxeboot/initrd.img 2-output_VARS-final.fd \
-        another-output_VARS-final.fd
+        --kernel-url https://download.fedoraproject.org/pub/fedora/linux/releases/27/Everything/x86_64/os/images/pxeboot/vmlinuz \
+        --initrd-url https://download.fedoraproject.org/pub/fedora/linux/releases/27/Everything/x86_64/os/images/pxeboot/initrd.img \
+        another-output-VARS.fd
 
 
 This script does the following, in that order:
