@@ -5,12 +5,12 @@ Boot keys enrolled.  (And verify that it works.)
 
 Simplest working invocation of the script is:
 
-    $ ./ovmf-vars-generator.py output-VARS.fd
+    $ ./ovmf-vars-generator output-VARS.fd
 
 But, a more tedious variant where you can invoke the script with custom
 paths and URLs:
 
-    $ ./ovmf-vars-generator.py \
+    $ ./ovmf-vars-generator \
         --ovmf-binary /usr/share/edk2/ovmf/OVMF_CODE.secboot.fd \
         --uefi-shell-iso /usr/share/edk2/ovmf/UefiShell.iso \
         --ovmf-template-vars /usr/share/edk2/ovmf/OVMF_VARS.fd \
