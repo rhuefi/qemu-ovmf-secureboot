@@ -22,7 +22,7 @@ import subprocess
 
 
 def strip_special(line):
-    return ''.join([c for c in line if c in string.printable])
+    return ''.join([c for c in str(line) if c in string.printable])
 
 
 def generate_qemu_cmd(args, readonly, *extra_args):
@@ -92,23 +92,27 @@ def enroll_keys(args):
         stderr=subprocess.STDOUT)
     # Wait until the UEFI shell starts (first line is printed)
     read = p.stdout.readline()
-    if 'char device redirected' in read:
+    if b'char device redirected' in read:
         read = p.stdout.readline()
     if args.print_output:
         print(strip_special(read), end='')
+        print()
     # Send the escape char to enter the UEFI shell early
-    p.stdin.write(chr(27))
+    p.stdin.write(b'\x1b')
+    p.stdin.flush()
     # And then run the following three commands from the UEFI shell:
     # change into the first file system device; install the default
     # keys and certificates, and reboot
     p.stdin.write(b'fs0:\r\n')
     p.stdin.write(b'EnrollDefaultKeys.efi\r\n')
     p.stdin.write(b'reset\r\n')
+    p.stdin.flush()
     while True:
         read = p.stdout.readline()
         if args.print_output:
             print('OUT: %s' % strip_special(read), end='')
-        if 'info: success' in read:
+            print()
+        if b'info: success' in read:
             break
     p.kill()
     if args.print_output:
@@ -136,9 +140,10 @@ def test_keys(args):
             read = p.stdout.readline()
             if args.print_output:
                 print('OUT: %s' % strip_special(read), end='')
-            if 'Secure boot disabled' in read:
+                print()
+            if b'Secure boot disabled' in read:
                 raise Exception('Secure Boot was disabled')
-            elif 'Secure boot enabled and kernel locked down' in read:
+            elif b'Secure boot enabled and kernel locked down' in read:
                 if args.verbose:
                     print('Confirmed: Secure Boot is enabled!')
                 break
