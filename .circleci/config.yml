@@ -12,5 +12,13 @@ jobs:
           command: |
             python2 ./ovmf-vars-generator --verbose --print-output --kernel-path vmlinuz --initrd-path initrd.img output2.vars
 
+      - run:
+          name: run simple version with python3
+          command: |
+            python3 ./ovmf-vars-generator --verbose --print-output --kernel-path vmlinuz --initrd-path initrd.img output3.vars
+
       - store_artifacts:
           path: output2.vars
+
+      - store_artifacts:
+          path: output3.vars
