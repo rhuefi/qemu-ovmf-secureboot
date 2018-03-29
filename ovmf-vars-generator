@@ -166,6 +166,9 @@ def parse_args():
                         default='/usr/share/edk2/ovmf/OVMF_VARS.fd')
     parser.add_argument('--uefi-shell-iso', help='Path to uefi shell iso',
                         default='/usr/share/edk2/ovmf/UefiShell.iso')
+    parser.add_argument('--skip-testing',
+                        help='Skip testing generated "VARS" file',
+                        action='store_true')
     parser.add_argument('--kernel-path',
                         help='Specify a consistent path for kernel')
     parser.add_argument('--initrd-path',
@@ -194,9 +197,13 @@ def main():
     if os.path.exists(args.output) and not args.force:
         raise Exception('%s already exists' % args.output)
     enroll_keys(args)
-    test_keys(args)
+    if not args.skip_testing:
+        test_keys(args)
     if args.verbose:
-        print('Created and verified %s' % args.output)
+        if args.skip_testing:
+            print('Created %s' % args.output)
+        else:
+            print('Created and verified %s' % args.output)
 
 
 if __name__ == '__main__':
