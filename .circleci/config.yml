@@ -1,0 +1,16 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: puiterwijk/qemu-ovmf-secureboot:testenv
+
+    steps:
+      - checkout
+
+      - run:
+          name: run simple version with python2
+          command: |
+            python2 ./ovmf-vars-generator --verbose --print-output --kernel-path vmlinuz --initrd-path initrd.img output2.vars
+
+      - store_artifacts:
+          path: output2.vars
