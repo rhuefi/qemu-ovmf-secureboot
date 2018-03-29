@@ -26,9 +26,12 @@ def strip_special(line):
 
 
 def generate_qemu_cmd(args, readonly, *extra_args):
+    machinetype = 'q35,smm=on'
+    if args.enable_kvm:
+        machinetype += ',accel=kvm'
     return [
         args.qemu_binary,
-        '-machine', 'q35,smm=on,accel=kvm',
+        '-machine', machinetype,
         '-display', 'none',
         '-no-user-config',
         '-nodefaults',
@@ -160,6 +163,8 @@ def parse_args():
                         action='store_true')
     parser.add_argument('--qemu-binary', help='QEMU binary path',
                         default='/usr/bin/qemu-system-x86_64')
+    parser.add_argument('--enable-kvm', help='Enable KVM acceleration',
+                        action='store_true')
     parser.add_argument('--ovmf-binary', help='OVMF secureboot code file',
                         default='/usr/share/edk2/ovmf/OVMF_CODE.secboot.fd')
     parser.add_argument('--ovmf-template-vars', help='OVMF empty vars file',
