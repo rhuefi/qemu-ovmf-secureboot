@@ -15,6 +15,7 @@ from __future__ import print_function
 
 import argparse
 import os
+import logging
 import tempfile
 import shutil
 import string
@@ -51,7 +52,7 @@ def generate_qemu_cmd(args, readonly, *extra_args):
         '-serial', 'stdio'] + list(extra_args)
 
 
-def download(url, target, verbose, suffix, no_download):
+def download(url, target, suffix, no_download):
     istemp = False
     if target and os.path.exists(target):
         return target, istemp
@@ -64,8 +65,7 @@ def download(url, target, verbose, suffix, no_download):
         raise Exception('%s did not exist, but downloading was disabled' %
                         target)
     import requests
-    if verbose:
-        print('Downloading %s to %s' % (url, target))
+    logging.debug('Downloading %s to %s', url, target)
     r = requests.get(url, stream=True)
     with open(target, 'wb') as f:
         for chunk in r.iter_content(chunk_size=1024):
@@ -76,6 +76,8 @@ def download(url, target, verbose, suffix, no_download):
 
 def enroll_keys(args):
     shutil.copy(args.ovmf_template_vars, args.out_temp)
+
+    logging.info('Starting enrollment')
 
     cmd = generate_qemu_cmd(
         args,
@@ -90,6 +92,7 @@ def enroll_keys(args):
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT)
+    logging.info('Performing enrollment')
     # Wait until the UEFI shell starts (first line is printed)
     read = p.stdout.readline()
     if b'char device redirected' in read:
@@ -117,14 +120,17 @@ def enroll_keys(args):
     p.kill()
     if args.print_output:
         print(strip_special(p.stdout.read()), end='')
+    logging.info('Finished enrollment')
 
 
 def test_keys(args):
+    logging.info('Grabbing test kernel and initrd')
     kernel, kerneltemp = download(args.kernel_url, args.kernel_path,
-                                  args.verbose, 'kernel', args.no_download)
+                                  'kernel', args.no_download)
     initrd, initrdtemp = download(args.initrd_url, args.initrd_path,
-                                  args.verbose, 'initrd', args.no_download)
+                                  'initrd', args.no_download)
 
+    logging.info('Starting verification')
     try:
         cmd = generate_qemu_cmd(
             args,
@@ -136,6 +142,7 @@ def test_keys(args):
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
+        logging.info('Performing verification')
         while True:
             read = p.stdout.readline()
             if args.print_output:
@@ -144,12 +151,12 @@ def test_keys(args):
             if b'Secure boot disabled' in read:
                 raise Exception('Secure Boot was disabled')
             elif b'Secure boot enabled and kernel locked down' in read:
-                if args.verbose:
-                    print('Confirmed: Secure Boot is enabled!')
+                logging.info('Confirmed: Secure Boot is enabled')
                 break
         p.kill()
         if args.print_output:
             print(strip_special(p.stdout.read()), end='')
+        logging.info('Finished verification')
     finally:
         if kerneltemp:
             os.remove(kernel)
@@ -165,8 +172,10 @@ def parse_args():
                         action='store_true')
     parser.add_argument('--print-output', help='Print the QEMU guest output',
                         action='store_true')
-    parser.add_argument('--verbose', '-v', help='Print status',
-                        action='store_true')
+    parser.add_argument('--verbose', '-v', help='Increase verbosity',
+                        action='count')
+    parser.add_argument('--quiet', '-q', help='Decrease verbosity',
+                        action='count')
     parser.add_argument('--qemu-binary', help='QEMU binary path',
                         default='/usr/bin/qemu-system-x86_64')
     parser.add_argument('--enable-kvm', help='Enable KVM acceleration',
@@ -209,11 +218,20 @@ def validate_args(args):
     if os.path.exists(args.output) and not args.force:
         raise Exception('%s already exists' % args.output)
 
+    verbosity = (args.verbose or 1) - (args.quiet or 0)
+    if verbosity >= 2:
+        logging.basicConfig(level=logging.DEBUG)
+    elif verbosity == 1:
+        logging.basicConfig(level=logging.INFO)
+    elif verbosity < 0:
+        logging.basicConfig(level=logging.ERROR)
+    else:
+        logging.basicConfig(level=logging.WARN)
+
     temped = tempfile.mkstemp(prefix='qosb.', suffix='.vars')
     os.close(temped[0])
     args.out_temp = temped[1]
-    if args.verbose:
-        print('Temp output: %s' % args.out_temp)
+    logging.debug('Temp output: %s', args.out_temp)
 
 
 def move_to_dest(args):
@@ -227,11 +245,10 @@ def main():
     if not args.skip_testing:
         test_keys(args)
     move_to_dest(args)
-    if args.verbose:
-        if args.skip_testing:
-            print('Created %s' % args.output)
-        else:
-            print('Created and verified %s' % args.output)
+    if args.skip_testing:
+        logging.info('Created %s' % args.output)
+    else:
+        logging.info('Created and verified %s' % args.output)
 
 
 if __name__ == '__main__':
