@@ -45,7 +45,7 @@ def generate_qemu_cmd(args, readonly, *extra_args):
             args.ovmf_binary),
         '-drive',
         'file=%s,if=pflash,format=raw,unit=1,readonly=%s' % (
-            args.output, 'on' if readonly else 'off'),
+            args.out_temp, 'on' if readonly else 'off'),
         '-object', 'rng-random,id=objrng0,filename=/dev/urandom',
         '-device', 'virtio-rng-pci,rng=objrng0,id=rng0',
         '-serial', 'stdio'] + list(extra_args)
@@ -75,7 +75,7 @@ def download(url, target, verbose, suffix, no_download):
 
 
 def enroll_keys(args):
-    shutil.copy(args.ovmf_template_vars, args.output)
+    shutil.copy(args.ovmf_template_vars, args.out_temp)
 
     cmd = generate_qemu_cmd(
         args,
@@ -160,6 +160,7 @@ def test_keys(args):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('output', help='Filename for output vars file')
+    parser.add_argument('--out-temp', help=argparse.SUPPRESS)
     parser.add_argument('--force', help='Overwrite existing output file',
                         action='store_true')
     parser.add_argument('--print-output', help='Print the QEMU guest output',
@@ -199,16 +200,33 @@ def parse_args():
     args = parser.parse_args()
     args.kernel_url = args.kernel_url % {'version': args.fedora_version}
     args.initrd_url = args.initrd_url % {'version': args.fedora_version}
+
+    validate_args(args)
     return args
+
+
+def validate_args(args):
+    if os.path.exists(args.output) and not args.force:
+        raise Exception('%s already exists' % args.output)
+
+    temped = tempfile.mkstemp(prefix='qosb.', suffix='.vars')
+    os.close(temped[0])
+    args.out_temp = temped[1]
+    if args.verbose:
+        print('Temp output: %s' % args.out_temp)
+
+
+def move_to_dest(args):
+    shutil.copy(args.out_temp, args.output)
+    os.remove(args.out_temp)
 
 
 def main():
     args = parse_args()
-    if os.path.exists(args.output) and not args.force:
-        raise Exception('%s already exists' % args.output)
     enroll_keys(args)
     if not args.skip_testing:
         test_keys(args)
+    move_to_dest(args)
     if args.verbose:
         if args.skip_testing:
             print('Created %s' % args.output)
