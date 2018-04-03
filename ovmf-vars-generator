@@ -147,7 +147,10 @@ def test_keys(args):
                 print()
             if b'Secure boot disabled' in read:
                 raise Exception('Secure Boot was disabled')
-            elif b'Secure boot enabled and kernel locked down' in read:
+            elif b'Secure boot enabled' in read:
+                logging.info('Confirmed: Secure Boot is enabled')
+                break
+            elif b'Kernel is locked down from EFI secure boot' in read:
                 logging.info('Confirmed: Secure Boot is enabled')
                 break
         p.kill()
