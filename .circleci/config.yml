@@ -17,6 +17,16 @@ jobs:
           command: |
             python3 ./ovmf-vars-generator --verbose --print-output --kernel-path vmlinuz output3.vars
 
+      - run:
+          name: run enrollment-only
+          command: |
+            python3 ./ovmf-vars-generator --verbose --print-output --kernel-path vmlinuz outputsplit.vars --skip-testing
+
+      - run:
+          name: run testing-only
+          command: |
+            python3 ./ovmf-vars-generator --verbose --print-output --kernel-path vmlinuz outputsplit.vars --skip-enrollment
+
       - store_artifacts:
           path: output2.vars
 

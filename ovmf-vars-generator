@@ -181,6 +181,8 @@ def parse_args():
                         default='/usr/share/edk2/ovmf/OVMF_VARS.fd')
     parser.add_argument('--uefi-shell-iso', help='Path to uefi shell iso',
                         default='/usr/share/edk2/ovmf/UefiShell.iso')
+    parser.add_argument('--skip-enrollment',
+                        help='Skip enrollment, only test', action='store_true')
     parser.add_argument('--skip-testing',
                         help='Skip testing generated "VARS" file',
                         action='store_true')
@@ -203,8 +205,13 @@ def parse_args():
 
 
 def validate_args(args):
-    if os.path.exists(args.output) and not args.force:
+    if (os.path.exists(args.output)
+            and not args.force
+            and not args.skip_enrollment):
         raise Exception('%s already exists' % args.output)
+
+    if args.skip_enrollment and not os.path.exists(args.output):
+        raise Exception('%s does not yet exist' % args.output)
 
     verbosity = (args.verbose or 1) - (args.quiet or 0)
     if verbosity >= 2:
@@ -216,10 +223,13 @@ def validate_args(args):
     else:
         logging.basicConfig(level=logging.WARN)
 
-    temped = tempfile.mkstemp(prefix='qosb.', suffix='.vars')
-    os.close(temped[0])
-    args.out_temp = temped[1]
-    logging.debug('Temp output: %s', args.out_temp)
+    if args.skip_enrollment:
+        args.out_temp = args.output
+    else:
+        temped = tempfile.mkstemp(prefix='qosb.', suffix='.vars')
+        os.close(temped[0])
+        args.out_temp = temped[1]
+        logging.debug('Temp output: %s', args.out_temp)
 
 
 def move_to_dest(args):
@@ -229,14 +239,18 @@ def move_to_dest(args):
 
 def main():
     args = parse_args()
-    enroll_keys(args)
+    if not args.skip_enrollment:
+        enroll_keys(args)
     if not args.skip_testing:
         test_keys(args)
-    move_to_dest(args)
-    if args.skip_testing:
-        logging.info('Created %s' % args.output)
+    if not args.skip_enrollment:
+        move_to_dest(args)
+        if args.skip_testing:
+            logging.info('Created %s' % args.output)
+        else:
+            logging.info('Created and verified %s' % args.output)
     else:
-        logging.info('Created and verified %s' % args.output)
+        logging.info('Verified %s', args.output)
 
 
 if __name__ == '__main__':
