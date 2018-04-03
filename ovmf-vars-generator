@@ -7,8 +7,8 @@
 # Licensed under MIT License, for full text see LICENSE
 #
 # Purpose: Launch a QEMU guest and enroll ithe UEFI keys into an OVMF
-#          variables ("VARS") file.  Then boot a Linux kernel and initrd
-#          with QEMU.  Finally, perform a check to verify if Secure Boot
+#          variables ("VARS") file.  Then boot a Linux kernel with QEMU.
+#          Finally, perform a check to verify if Secure Boot
 #          is enabled.
 
 from __future__ import print_function
@@ -124,11 +124,9 @@ def enroll_keys(args):
 
 
 def test_keys(args):
-    logging.info('Grabbing test kernel and initrd')
+    logging.info('Grabbing test kernel')
     kernel, kerneltemp = download(args.kernel_url, args.kernel_path,
                                   'kernel', args.no_download)
-    initrd, initrdtemp = download(args.initrd_url, args.initrd_path,
-                                  'initrd', args.no_download)
 
     logging.info('Starting verification')
     try:
@@ -136,8 +134,7 @@ def test_keys(args):
             args,
             True,
             '-append', 'console=tty0 console=ttyS0,115200n8',
-            '-kernel', kernel,
-            '-initrd', initrd)
+            '-kernel', kernel)
         p = subprocess.Popen(cmd,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
@@ -160,8 +157,6 @@ def test_keys(args):
     finally:
         if kerneltemp:
             os.remove(kernel)
-        if initrdtemp:
-            os.remove(initrd)
 
 
 def parse_args():
@@ -191,24 +186,17 @@ def parse_args():
                         action='store_true')
     parser.add_argument('--kernel-path',
                         help='Specify a consistent path for kernel')
-    parser.add_argument('--initrd-path',
-                        help='Specify a consistent path for initrd')
     parser.add_argument('--no-download', action='store_true',
-                        help='Never download a kernel/initrd')
+                        help='Never download a kernel')
     parser.add_argument('--fedora-version',
-                        help='Fedora version to get kernel/initrd for checking',
+                        help='Fedora version to get kernel for checking',
                         default='27')
     parser.add_argument('--kernel-url', help='Kernel URL',
                         default='https://download.fedoraproject.org/pub/fedora'
                                 '/linux/releases/%(version)s/Everything/x86_64'
                                 '/os/images/pxeboot/vmlinuz')
-    parser.add_argument('--initrd-url', help='Initrd URL',
-                        default='https://download.fedoraproject.org/pub/fedora'
-                                '/linux/releases/%(version)s/Everything/x86_64'
-                                '/os/images/pxeboot/initrd.img')
     args = parser.parse_args()
     args.kernel_url = args.kernel_url % {'version': args.fedora_version}
-    args.initrd_url = args.initrd_url % {'version': args.fedora_version}
 
     validate_args(args)
     return args
