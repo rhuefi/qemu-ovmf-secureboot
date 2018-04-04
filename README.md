@@ -1,5 +1,7 @@
 # QEMU, OVMF and Secure Boot
 
+## Description and usage
+
 Script to generate an OVMF variables ("VARS") file with default Secure
 Boot keys enrolled.  (And verify that it works.)
 
@@ -40,3 +42,27 @@ looks as follows:
     (fedora-vm)$ dmesg | grep -i secure
           [    0.000000] Secure boot enabled and kernel locked down
           [    3.261277] EFI: Loaded cert 'Fedora Secure Boot CA: fde32599c2d61db1bf5807335d7b20e4cd963b42' linked to '.builtin_trusted_keys'
+
+
+## What certificates and keys are enrolled?
+
+The following certificates and keys are enrolled by the tool:
+
+  - As *Platform Key*, and as one of the two *Key Exchange Keys* that we
+    set up, the `EnrollDefaultKeys.efi` binary on both Fedora and RHEL,
+    uses the same digital certificate called `Red Hat Secure Boot
+    (PK/KEK key 1)/emailAddress=secalert@redhat.com`, and Red Hat's
+    Product Security team has the private key for it.
+
+  - The certificate that is enrolled as the second *Key Exchange Key* is
+    called `Microsoft Corporation KEK CA 2011`. Updates to the
+    authenticated dbx (basically, "blacklist") variable, periodically
+    released at http://www.uefi.org/revocationlistfile , are signed such
+    that the signature chain ends in this certificate. The update can be
+    installed in the guest Linux OS with the `dbxtool` utility.
+
+  - Then, the authenticated `db` variable gets the following two
+    cetificates: `Microsoft Windows Production PCA 2011` (for accepting
+    Windows 8, Windows Server 2012 R2, etc boot loaders), and `Microsoft
+    Corporation UEFI CA 2011` (for verifying the `shim` binary, and PCI
+    expansion ROMs).
