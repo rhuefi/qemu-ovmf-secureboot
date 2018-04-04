@@ -107,7 +107,7 @@ def enroll_keys(args):
     # keys and certificates, and reboot
     p.stdin.write(b'fs0:\r\n')
     p.stdin.write(b'EnrollDefaultKeys.efi\r\n')
-    p.stdin.write(b'reset\r\n')
+    p.stdin.write(b'reset -s\r\n')
     p.stdin.flush()
     while True:
         read = p.stdout.readline()
@@ -116,7 +116,7 @@ def enroll_keys(args):
             print()
         if b'info: success' in read:
             break
-    p.kill()
+    p.wait()
     if args.print_output:
         print(strip_special(p.stdout.read()), end='')
     logging.info('Finished enrollment')
