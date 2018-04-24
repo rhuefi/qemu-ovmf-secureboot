@@ -47,7 +47,6 @@ def generate_qemu_cmd(args, readonly, *extra_args):
         '-drive',
         'file=%s,if=pflash,format=raw,unit=1,readonly=%s' % (
             args.out_temp, 'on' if readonly else 'off'),
-        '-object', 'rng-random,id=objrng0,filename=/dev/urandom',
         '-serial', 'stdio'] + list(extra_args)
 
 
@@ -82,10 +81,10 @@ def enroll_keys(args):
         args,
         False,
         '-drive',
-        'file=%s,format=raw,if=none,media=cdrom,id=drive-virtio-cd1,'
+        'file=%s,format=raw,if=none,media=cdrom,id=drive-cd1,'
         'readonly=on' % args.uefi_shell_iso,
         '-device',
-        'ide-cd,drive=drive-virtio-cd1,id=virtio-cd1,'
+        'ide-cd,drive=drive-cd1,id=cd1,'
         'bootindex=1')
     p = subprocess.Popen(cmd,
         stdin=subprocess.PIPE,
