@@ -27,7 +27,10 @@ def strip_special(line):
 
 
 def generate_qemu_cmd(args, readonly, *extra_args):
-    machinetype = 'q35,smm=on'
+    if args.disable_smm:
+        machinetype = 'pc'
+    else:
+        machinetype = 'q35,smm=on'
     if args.enable_kvm:
         machinetype += ',accel=kvm'
     return [
@@ -40,7 +43,8 @@ def generate_qemu_cmd(args, readonly, *extra_args):
         '-smp', '2,sockets=2,cores=1,threads=1',
         '-chardev', 'pty,id=charserial1',
         '-device', 'isa-serial,chardev=charserial1,id=serial1',
-        '-global', 'driver=cfi.pflash01,property=secure,value=on',
+        '-global', 'driver=cfi.pflash01,property=secure,value=%s' % (
+            'off' if args.disable_smm else 'on'),
         '-drive',
         'file=%s,if=pflash,format=raw,unit=0,readonly=on' % (
             args.ovmf_binary),
@@ -198,6 +202,18 @@ def parse_args():
                         default='https://download.fedoraproject.org/pub/fedora'
                                 '/linux/releases/%(version)s/Everything/x86_64'
                                 '/os/images/pxeboot/vmlinuz')
+    parser.add_argument('--disable-smm',
+                        help=('Don\'t restrict varstore pflash writes to '
+                              'guest code that executes in SMM. Use this '
+                              'option only if your OVMF binary doesn\'t have '
+                              'the edk2 SMM driver stack built into it '
+                              '(possibly because your QEMU binary lacks SMM '
+                              'emulation). Note that without restricting '
+                              'varstore pflash writes to guest code that '
+                              'executes in SMM, a malicious guest kernel, '
+                              'used for testing, could undermine Secure '
+                              'Boot.'),
+                        action='store_true')
     args = parser.parse_args()
     args.kernel_url = args.kernel_url % {'version': args.fedora_version}
 
