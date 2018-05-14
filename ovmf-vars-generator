@@ -31,8 +31,7 @@ def generate_qemu_cmd(args, readonly, *extra_args):
         machinetype = 'pc'
     else:
         machinetype = 'q35,smm=on'
-    if args.enable_kvm:
-        machinetype += ',accel=kvm'
+    machinetype += ',accel=%s' % ('kvm' if args.enable_kvm else 'tcg')
     return [
         args.qemu_binary,
         '-machine', machinetype,
