@@ -28,11 +28,23 @@ def strip_special(line):
 
 
 def generate_qemu_cmd(args, readonly, *extra_args):
-    if args.disable_smm:
+    is_x86 = True
+    arch_args = []
+    if os.path.basename(args.qemu_binary) == 'qemu-system-aarch64':
+        machinetype = 'virt'
+        arch_args.extend(['-cpu', 'cortex-a57'])
+        is_x86 = False
+    elif args.disable_smm:
         machinetype = 'pc'
     else:
         machinetype = 'q35,smm=on'
     machinetype += ',accel=%s' % ('kvm' if args.enable_kvm else 'tcg')
+
+    if is_x86 == True:
+        arch_args.extend(['-chardev', 'pty,id=charserial1',
+                           '-device', 'isa-serial,chardev=charserial1,id=serial1',
+                           '-global', 'driver=cfi.pflash01,property=secure,value=%s' % (
+                               'off' if args.disable_smm else 'on')])
 
     if args.oem_string is None:
         oemstrings = []
@@ -51,18 +63,14 @@ def generate_qemu_cmd(args, readonly, *extra_args):
         '-no-user-config',
         '-nodefaults',
         '-m', '768',
-        '-smp', '2,sockets=2,cores=1,threads=1',
-        '-chardev', 'pty,id=charserial1',
-        '-device', 'isa-serial,chardev=charserial1,id=serial1',
-        '-global', 'driver=cfi.pflash01,property=secure,value=%s' % (
-            'off' if args.disable_smm else 'on'),
+        '-smp', '1,sockets=1,cores=1,threads=1',
         '-drive',
         'file=%s,if=pflash,format=raw,unit=0,readonly=on' % (
             args.ovmf_binary),
         '-drive',
         'file=%s,if=pflash,format=raw,unit=1,readonly=%s' % (
             args.out_temp, 'on' if readonly else 'off'),
-        '-serial', 'stdio'] + oemstrings + list(extra_args)
+        '-serial', 'stdio'] + oemstrings + arch_args + list(extra_args)
 
 
 def download(url, target, suffix, no_download):
@@ -96,11 +104,8 @@ def enroll_keys(args):
         args,
         False,
         '-drive',
-        'file=%s,format=raw,if=none,media=cdrom,id=drive-cd1,'
-        'readonly=on' % args.uefi_shell_iso,
-        '-device',
-        'ide-cd,drive=drive-cd1,id=cd1,'
-        'bootindex=1')
+        'file=%s,format=raw,if=virtio,media=cdrom,id=drive-cd1,'
+        'readonly=on' % args.uefi_shell_iso)
     p = subprocess.Popen(cmd,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
