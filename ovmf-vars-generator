@@ -32,6 +32,16 @@ def generate_qemu_cmd(args, readonly, *extra_args):
     else:
         machinetype = 'q35,smm=on'
     machinetype += ',accel=%s' % ('kvm' if args.enable_kvm else 'tcg')
+
+    if args.oem_string is None:
+        oemstrings = []
+    else:
+        oemstring_values = [
+            ",value=" + s.replace(",", ",,") for s in args.oem_string ]
+        oemstrings = [
+            '-smbios',
+            "type=11" + ''.join(oemstring_values) ]
+
     return [
         args.qemu_binary,
         '-machine', machinetype,
@@ -50,7 +60,7 @@ def generate_qemu_cmd(args, readonly, *extra_args):
         '-drive',
         'file=%s,if=pflash,format=raw,unit=1,readonly=%s' % (
             args.out_temp, 'on' if readonly else 'off'),
-        '-serial', 'stdio'] + list(extra_args)
+        '-serial', 'stdio'] + oemstrings + list(extra_args)
 
 
 def download(url, target, suffix, no_download):
@@ -213,6 +223,14 @@ def parse_args():
                               'used for testing, could undermine Secure '
                               'Boot.'),
                         action='store_true')
+    parser.add_argument('--oem-string',
+                        help=('Pass the argument to the guest as a string in '
+                              'the SMBIOS Type 11 (OEM Strings) table. '
+                              'Multiple occurrences of this option are '
+                              'collected into a single SMBIOS Type 11 table. '
+                              'A pure ASCII string argument is strongly '
+                              'suggested.'),
+                        action='append')
     args = parser.parse_args()
     args.kernel_url = args.kernel_url % {'version': args.fedora_version}
 
