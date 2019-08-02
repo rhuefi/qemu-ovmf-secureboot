@@ -108,6 +108,10 @@ def enroll_keys(args):
     read = p.stdout.readline()
     if b'char device redirected' in read:
         read = p.stdout.readline()
+    # Skip passed QEMU warnings, like the following one we see in Ubuntu:
+    # qemu-system-x86_64: warning: TCG doesn't support requested feature: CPUID.01H:ECX.vmx [bit 5]
+    while b'qemu-system-x86_64: warning:' in read:
+        read = p.stdout.readline()
     if args.print_output:
         print(strip_special(read), end='')
         print()
