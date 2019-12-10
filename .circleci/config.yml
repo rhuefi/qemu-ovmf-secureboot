@@ -8,11 +8,6 @@ jobs:
       - checkout
 
       - run:
-          name: run simple version with python2
-          command: |
-            python2 ./ovmf-vars-generator --verbose --print-output --kernel-path vmlinuz output2.vars
-
-      - run:
           name: run simple version with python3
           command: |
             python3 ./ovmf-vars-generator --verbose --print-output --kernel-path vmlinuz output3.vars
@@ -26,9 +21,6 @@ jobs:
           name: run testing-only
           command: |
             python3 ./ovmf-vars-generator --verbose --print-output --kernel-path vmlinuz outputsplit.vars --skip-enrollment
-
-      - store_artifacts:
-          path: output2.vars
 
       - store_artifacts:
           path: output3.vars
