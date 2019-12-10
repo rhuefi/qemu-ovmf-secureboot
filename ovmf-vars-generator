@@ -48,7 +48,7 @@ def generate_qemu_cmd(args, readonly, *extra_args):
         '-display', 'none',
         '-no-user-config',
         '-nodefaults',
-        '-m', '256',
+        '-m', '768',
         '-smp', '2,sockets=2,cores=1,threads=1',
         '-chardev', 'pty,id=charserial1',
         '-device', 'isa-serial,chardev=charserial1,id=serial1',
