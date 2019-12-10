@@ -128,7 +128,7 @@ def enroll_keys(args):
     p.stdin.flush()
     while True:
         read = p.stdout.readline()
-        if args.print_output:
+        if args.print_output and len(read):
             print('OUT: %s' % strip_special(read), end='')
             print()
         if b'info: success' in read:
@@ -160,7 +160,7 @@ def test_keys(args):
         logging.info('Performing verification')
         while True:
             read = p.stdout.readline()
-            if args.print_output:
+            if args.print_output and len(read):
                 print('OUT: %s' % strip_special(read), end='')
                 print()
             if b'Secure boot disabled' in read:
