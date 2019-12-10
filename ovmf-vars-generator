@@ -132,6 +132,8 @@ def enroll_keys(args):
             print()
         if b'info: success' in read:
             break
+        elif b'Reset with <null string>' in read:
+            break
     p.wait()
     if args.print_output:
         print(strip_special(p.stdout.read()), end='')
