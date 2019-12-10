@@ -46,6 +46,7 @@ def generate_qemu_cmd(args, readonly, *extra_args):
         args.qemu_binary,
         '-machine', machinetype,
         '-display', 'none',
+        '-no-reboot',
         '-no-user-config',
         '-nodefaults',
         '-m', '768',
