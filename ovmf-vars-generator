@@ -212,9 +212,9 @@ def parse_args():
                         help='Fedora version to get kernel for checking',
                         default='27')
     parser.add_argument('--kernel-url', help='Kernel URL',
-                        default='https://download.fedoraproject.org/pub/fedora'
-                                '/linux/releases/%(version)s/Everything/x86_64'
-                                '/os/images/pxeboot/vmlinuz')
+                        default='https://archives.fedoraproject.org/pub'
+                                '/archive/fedora/linux/releases/%(version)s'
+                                '/Everything/x86_64/os/images/pxeboot/vmlinuz')
     parser.add_argument('--disable-smm',
                         help=('Don\'t restrict varstore pflash writes to '
                               'guest code that executes in SMM. Use this '
