@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  build:
+  gen_cert:
     docker:
       - image: puiterwijk/qemu-ovmf-secureboot:testenv
 
@@ -8,19 +8,40 @@ jobs:
       - checkout
 
       - run:
+          name: generate PK/KEK OEM strings
+          command: |
+            openssl req -x509 -newkey rsa:2048 -nodes -subj "/C=XX/ST=Test/L=EnrollTest/O=Xxx/CN=www.example.com" -outform PEM -keyout PkKek1.private.key -out PkKek1.pem
+            sed -e 's/^-----BEGIN CERTIFICATE-----$/4e32566d-8e9e-4f52-81d3-5bb9715f9727:/' -e '/^-----END CERTIFICATE-----$/d' PkKek1.pem > PkKek1.oemstr
+
+      - save_cache:
+          key: asset-cache-v1
+          paths:
+            - PkKek1.oemstr
+
+  test:
+    docker:
+      - image: puiterwijk/qemu-ovmf-secureboot:testenv
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          key: asset-cache-v1
+
+      - run:
           name: run simple version with python2
           command: |
-            python2 ./ovmf-vars-generator --verbose --print-output --kernel-path vmlinuz output2.vars
+            python2 ./ovmf-vars-generator --verbose --print-output --kernel-path vmlinuz output2.vars --oem-string "$(< PkKek1.oemstr)"
 
       - run:
           name: run simple version with python3
           command: |
-            python3 ./ovmf-vars-generator --verbose --print-output --kernel-path vmlinuz output3.vars
+            python3 ./ovmf-vars-generator --verbose --print-output --kernel-path vmlinuz output3.vars --oem-string "$(< PkKek1.oemstr)"
 
       - run:
           name: run enrollment-only
           command: |
-            python3 ./ovmf-vars-generator --verbose --print-output --kernel-path vmlinuz outputsplit.vars --skip-testing
+            python3 ./ovmf-vars-generator --verbose --print-output --kernel-path vmlinuz outputsplit.vars --skip-testing --oem-string "$(< PkKek1.oemstr)"
 
       - run:
           name: run testing-only
@@ -32,3 +53,12 @@ jobs:
 
       - store_artifacts:
           path: output3.vars
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - gen_cert
+      - test:
+          requires:
+            - gen_cert
