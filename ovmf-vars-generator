@@ -30,7 +30,7 @@ def strip_special(line):
 def generate_qemu_cmd(args, readonly, *extra_args):
     is_x86 = True
     arch_args = []
-    if os.path.basename(args.qemu_binary) == 'qemu-system-aarch64':
+    if os.path.basename(args.qemu_binary) == 'qemu-system-aarch64' or args.arch == 'aarch64':
         machinetype = 'virt'
         arch_args.extend(['-cpu', 'cortex-a57'])
         is_x86 = False
@@ -212,6 +212,8 @@ def test_keys(args):
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--arch', '-a', help='Architecture hint',
+                        choices=['x86_64', 'aarch64'])
     parser.add_argument('output', help='Filename for output vars file')
     parser.add_argument('--out-temp', help=argparse.SUPPRESS)
     parser.add_argument('--force', help='Overwrite existing output file',
