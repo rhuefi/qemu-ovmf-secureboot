@@ -20,6 +20,7 @@ import tempfile
 import shutil
 import string
 import subprocess
+import select
 
 
 def strip_special(line):
@@ -106,6 +107,9 @@ def enroll_keys(args):
         stderr=subprocess.STDOUT)
     logging.info('Performing enrollment')
     # Wait until the UEFI shell starts (first line is printed)
+    pollobj = select.poll()
+    pollobj.register(p.stdout, select.POLLIN)
+
     read = p.stdout.readline()
     if b'char device redirected' in read:
         read = p.stdout.readline()
@@ -116,25 +120,46 @@ def enroll_keys(args):
     if args.print_output:
         print(strip_special(read), end='')
         print()
-    # Send the escape char to enter the UEFI shell early
-    p.stdin.write(b'\x1b')
+    # Send the press enter for the default boot (uefi shell)
+    p.stdin.write(b'\r\n')
     p.stdin.flush()
-    # And then run the following three commands from the UEFI shell:
-    # change into the first file system device; install the default
-    # keys and certificates, and reboot
-    p.stdin.write(b'fs0:\r\n')
-    p.stdin.write(b'EnrollDefaultKeys.efi\r\n')
-    p.stdin.write(b'reset -s\r\n')
-    p.stdin.flush()
+
+    wait_timeout = 100;
     while True:
-        read = p.stdout.readline()
+        poll_result = pollobj.poll(1000)
+        if poll_result:
+            # readline can get stuck in menus and other
+            # UI elements in uefi which don't respond
+            # with a CR the poll above doesn't help
+            # with that case.
+            read = p.stdout.readline()
+        else:
+            wait_timeout-=1
+            if wait_timeout == 0:
+                logging.info('Failed enrollment')
+                # consider something stronger here
+                # as we can still get stuck in the p.wait()
+                break;
+            continue
         if args.print_output and len(read):
             print('OUT: %s' % strip_special(read), end='')
             print()
-        if b'info: success' in read:
+        if b'seconds to skip' in read:
+            p.stdin.write(b'\r\n')
+            p.stdin.flush()
+        elif b'info: success' in read:
             break
         elif b'Reset with <null string>' in read:
             break
+        elif b'Shell>' in read:
+            # And then run the following three commands from the UEFI shell:
+            # change into the first file system device; install the default
+            # keys and certificates, and reboot
+            p.stdin.write(b'fs0:\r\n')
+            p.stdin.write(b'EnrollDefaultKeys.efi\r\n')
+            p.stdin.write(b'reset -s\r\n')
+            p.stdin.flush()
+
     p.wait()
     if args.print_output:
         print(strip_special(p.stdout.read()), end='')
