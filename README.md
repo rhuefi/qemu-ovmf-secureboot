@@ -16,9 +16,9 @@ paths and URLs:
         --ovmf-binary /usr/share/edk2/ovmf/OVMF_CODE.secboot.fd \
         --uefi-shell-iso /usr/share/edk2/ovmf/UefiShell.iso \
         --ovmf-template-vars /usr/share/edk2/ovmf/OVMF_VARS.fd \
-        --fedora-version 27 \
+        --fedora-version 33 \
         --kernel-path /tmp/qosb.kernel \
-        --kernel-url https://download.fedoraproject.org/pub/fedora/linux/releases/27/Everything/x86_64/os/images/pxeboot/vmlinuz \
+        --kernel-url https://download.fedoraproject.org/pub/fedora/linux/releases/33/Everything/x86_64/os/images/pxeboot/vmlinuz \
         another-output-VARS.fd
 
 
@@ -34,12 +34,12 @@ This script does the following, in that order:
 
 Alternatively: You can also verify that Secure Boot is enabled properly
 in a full virtual machine by explicitly running `dmesg`, and grepping
-for "secure" string.  On a recent Fedora QEMU+KVM virtual machine, it
-looks as follows:
+for "secure" string.  On a recent Fedora (e.g. Fedora 33) QEMU+KVM virtual
+machine, it looks as follows:
 
     (fedora-vm)$ dmesg | grep -i secure
-          [    0.000000] Secure boot enabled and kernel locked down
-          [    3.261277] EFI: Loaded cert 'Fedora Secure Boot CA: fde32599c2d61db1bf5807335d7b20e4cd963b42' linked to '.builtin_trusted_keys'
+          [    0.000000] secureboot: Secure boot enabled
+          [    0.000000] Kernel is locked down from EFI Secure Boot mode; see man kernel_lockdown.7
 
 
 ## What certificates and keys are enrolled?
