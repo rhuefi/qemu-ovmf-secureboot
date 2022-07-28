@@ -47,6 +47,7 @@ def generate_qemu_cmd(args, readonly, *extra_args):
         '-machine', machinetype,
         '-display', 'none',
         '-no-reboot',
+        '-cpu', 'max',
         '-no-user-config',
         '-nodefaults',
         '-m', '768',
